@@ -1,10 +1,8 @@
 package com.example.redditapp
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -21,17 +19,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.redditapp.model.RedditPost
 import com.example.redditapp.network.RedditApiClient
 import com.example.redditapp.ui.theme.RedditAppTheme
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -41,7 +38,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             RedditAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val posts = remember { mutableStateOf<List<RedditPost>>(emptyList()) }
+                    val posts = rememberSaveable { mutableStateOf<List<RedditPost>>(emptyList()) }
                     val coroutineScope = rememberCoroutineScope()
 
                     LaunchedEffect(Unit) {
