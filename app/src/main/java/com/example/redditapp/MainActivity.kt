@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,9 +43,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             RedditAppTheme {
                 var posts by rememberSaveable { mutableStateOf<List<RedditPost>>(emptyList()) }
-                var currentPage by rememberSaveable { mutableStateOf(1) }
+                var currentPage by rememberSaveable { mutableIntStateOf(1) }
                 var nextAfter by rememberSaveable { mutableStateOf<String?>(null) }
+                var afterList by rememberSaveable { mutableStateOf(mutableListOf<String?>()) }
                 val coroutineScope = rememberCoroutineScope()
+                val lazyListState = rememberLazyListState()
+
 
                 LaunchedEffect(currentPage) {
                     coroutineScope.launch(Dispatchers.IO) {
@@ -51,13 +56,20 @@ class MainActivity : ComponentActivity() {
                         val (newPosts, newAfter) = RedditApiClient.getTopPosts(limit, nextAfter)
                         if (newPosts != null) {
                             posts = newPosts
+                            if (currentPage > afterList.size) {
+                                afterList.add(nextAfter)
+                            }
                             nextAfter = newAfter
+                            coroutineScope.launch {
+                                lazyListState.scrollToItem(0)
+                            }
                         }
                     }
                 }
 
                 Column(modifier = Modifier.fillMaxSize()) {
                     LazyColumn(
+                        state = lazyListState,
                         modifier = Modifier.weight(1f)
                     ) {
                         items(posts) { post ->
@@ -75,7 +87,8 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                                 if (currentPage > 1) {
                                     currentPage -= 1
-                                    nextAfter = null // Сбрасываем пагинацию
+                                    println("CURRENT PAGE:$currentPage")
+                                    nextAfter = afterList[currentPage - 1]
                                 }
                             },
                             enabled = currentPage > 1
