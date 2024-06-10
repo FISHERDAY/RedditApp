@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,14 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,25 +40,55 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             RedditAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val posts = rememberSaveable { mutableStateOf<List<RedditPost>>(emptyList()) }
-                    val coroutineScope = rememberCoroutineScope()
+                var posts by rememberSaveable { mutableStateOf<List<RedditPost>>(emptyList()) }
+                var currentPage by rememberSaveable { mutableStateOf(1) }
+                var nextAfter by rememberSaveable { mutableStateOf<String?>(null) }
+                val coroutineScope = rememberCoroutineScope()
 
-                    LaunchedEffect(Unit) {
-                        coroutineScope.launch(Dispatchers.IO) {
-                            val topPosts = RedditApiClient.getTopPosts()
-                            if (topPosts != null) {
-                                posts.value = topPosts.take(10) // taking first posts
-                            }
+                LaunchedEffect(currentPage) {
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val limit = 5
+                        val (newPosts, newAfter) = RedditApiClient.getTopPosts(limit, nextAfter)
+                        if (newPosts != null) {
+                            posts = newPosts
+                            nextAfter = newAfter
+                        }
+                    }
+                }
+
+                Column(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        items(posts) { post ->
+                            DisplayPost(post = post)
                         }
                     }
 
-                    LazyColumn(
-                        contentPadding = innerPadding,
-                        modifier = Modifier.fillMaxSize()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        items(posts.value) { post ->
-                            DisplayPost(post = post)
+                        Button(
+                            onClick = {
+                                if (currentPage > 1) {
+                                    currentPage -= 1
+                                    nextAfter = null // Сбрасываем пагинацию
+                                }
+                            },
+                            enabled = currentPage > 1
+                        ) {
+                            Text("Previous")
+                        }
+
+                        Button(
+                            onClick = {
+                                currentPage += 1
+                            }
+                        ) {
+                            Text("Next")
                         }
                     }
                 }
@@ -78,8 +111,9 @@ fun DisplayPost(post: RedditPost) {
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        if (post.thumbnail.isNotEmpty() && post.thumbnail != "self" && post.thumbnail != "default") {
-            println("AUTHOR:" + post.author + ", THUMBNAIL:" + post.thumbnail)
+        if (post.thumbnail.isNotEmpty() && post.thumbnail != "self" && post.thumbnail != "default" &&
+            post.thumbnail.endsWith(".jpg")
+        ) {
             Image(
                 painter = rememberAsyncImagePainter(model = post.thumbnail),
                 contentDescription = null,

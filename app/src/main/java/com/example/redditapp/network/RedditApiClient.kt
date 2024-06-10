@@ -12,16 +12,17 @@ object RedditApiClient {
 
     private val redditService: RedditService = retrofit.create(RedditService::class.java)
 
-    fun getTopPosts(): List<RedditPost>? {
-        val call = redditService.getTopPosts()
-        val response =
-            call.execute()  // Це виконується синхронно, в реальному додатку краще використовувати асинхронний метод
+    fun getTopPosts(limit: Int, after: String? = null): Pair<List<RedditPost>?, String?> {
+        val call = redditService.getTopPosts(limit, after)
+        val response = call.execute()
 
         return if (response.isSuccessful) {
             val redditApiResponse = response.body()
-            redditApiResponse?.data?.children?.map { it.data }
+            val posts = redditApiResponse?.data?.children?.map { it.data }
+            val nextAfter = redditApiResponse?.data?.after
+            Pair(posts, nextAfter)
         } else {
-            null
+            Pair(null, null)
         }
     }
 }
