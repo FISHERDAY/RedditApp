@@ -1,6 +1,7 @@
 package com.example.redditapp.model
 
 import com.google.gson.annotations.SerializedName
+import java.io.Serializable
 
 data class RedditPost(
     val id: String,
@@ -13,4 +14,4 @@ data class RedditPost(
     @SerializedName("num_comments")
     val numComments: Int,
     val url: String
-)
+) : Serializable

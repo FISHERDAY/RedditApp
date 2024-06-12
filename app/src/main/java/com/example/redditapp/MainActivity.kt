@@ -111,7 +111,12 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Text("Previous")
                         }
-
+                        Text(
+                            text = "$currentPage",
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                         Button(
                             onClick = {
                                 currentPage += 1
